@@ -21,20 +21,20 @@ library(PROJ)
 3.  National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI [@rutherford2006; @Dayaram2019].
 
 ```{r}
-# Add LK Data (prepared in ARCGIS PRO), where 0 = inside AOI but no value assigned, 8 = severely degraded 80%). 
-LK <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Alternative_LC_DEG/littlekaroo_deg4.tif")
+# Run LCchange_7class_veg24.qmd data loading steps prior to running this code.
 
-# Add national LC, resample to match 20m AEA grid used for supplementary analysis
-nlc <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif" )
-nlc <- resample(nlc, LK, method = "near") #  match extent 
+# Add Little Karoo degradation data 2009 (prepared in ARCGIS PRO), where 0 = inside AOI but level of degradation < that 80%; where 8 = severely degraded >= 80%). 
 
-# Add vegetation data  
-veg <- vect("C:/GIS/NBA/VegMap/VEGMAP2024/NVM2024final/NVM2024final.gdb", "NVM2024Final_IEM5_12_07012025")  
+lk_path <- list.files(
+  path = data_path,
+  pattern = "^little_karoo_deg4\\.tif$",
+  recursive = TRUE,
+  full.names = TRUE,
+  ignore.case = TRUE
+)
 
-# Clean up non veg names 
-veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE)   
-# rasterise the veg vector 
-veg_r <- rasterize(veg, nlc, "T_MAPCODE")  
+lk <- terra::rast(lk_path)
+lk <- resample(lk, lc2022, method = "near") #  match extent
 ```
 
 ## Analysis
@@ -46,12 +46,13 @@ Step 1. Stack the land cover for each time period with the vegetation data.
 Step 2. Cross-tabulate each raster stack and add a column denoting the YEAR (from Land Cover) to the output table (in tibble format). Rename each output column as "LC" to allow binding later.\
 
 ```{r}
-# Analysis #Step 1-2.   # get LC  at 1990 time period 
-lk_rall  <- as_tibble(crosstab(c(nlc, veg_r, LK)))   
+# Crosstab little Karoo, nlc2022, and veg
+# Analysis #Step 1-2.   # get LC  at 2022 time period 
+lk_rall  <- as_tibble(crosstab(c(lc2022, vegrast, lk)))   
 write.csv(lk_rall, file = "outputs/lk_rall.csv")
 
 # Import cross tab output to avoid running spatial analysis 
-lk_rall <- read.csv("C:/Rdata/LCC_terr/outputs/lk_rall.csv")
+#lk_rall <- read.csv("outputs/lk_rall.csv")
 
 # Calculate extent of each vegtype within the specific AOI 
 lk_list <- lk_rall %>%

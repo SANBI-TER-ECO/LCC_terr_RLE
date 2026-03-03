@@ -1,8 +1,4 @@
 ---
-bibliography: references.bib
----
-
----
 title: "Western Cape (2020), KwaZulu-Natal (2017)  & Mpumalanga (2017) Land Cover"
 format: html
 execute:
@@ -45,23 +41,43 @@ library(PROJ)
     ```
 
 ```{r}
+
+# Run LCchange_7class_veg24.qmd data loading steps prior to running this code
+
 # Add WC, KZN and MPL LC data  (prepared in ARCGIS PRO), where 0 = inside AOI but no value assigned, 2 = old fields, 4 = lumped crop/built/mine/plantation/dams).
  
-wc <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/WC/wc_lc3.tif")
-kzn <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Alternative_LC_DEG/kzn_lc2.tif")
-mpl <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Alternative_LC_DEG/mpl_lc3.tif")
+wc_path <- list.files(
+  path = data_path,
+  pattern = "^wc_lc3\\.tif$",
+  recursive = TRUE,
+  full.names = TRUE,
+  ignore.case = TRUE
+)
 
-# Add national LC, resample to match 20m AEA grid used for supplementary analysis
+wc <- terra::rast(wc_path)
+wc <- resample(wc, lc2022, method = "near") #  match extent
+########################
+kzn <- list.files(
+  path = data_path,
+  pattern = "^kzn_lc2\\.tif$",
+  recursive = TRUE,
+  full.names = TRUE,
+  ignore.case = TRUE
+)
 
-nlc <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif" )
-nlc <- resample(nlc, wc, method = "near") # match extent 
+kzn <- terra::rast(kzn_path)
+kzn <- resample(kzn, lc2022, method = "near") #  match extent
+#########################
+mp_path <- list.files(
+  path = data_path,
+  pattern = "^mpl_lc3\\.tif$",
+  recursive = TRUE,
+  full.names = TRUE,
+  ignore.case = TRUE
+)
 
-# Add vegetation data  
-veg <- vect("C:/GIS/NBA/VegMap/VEGMAP2024/NVM2024final/NVM2024final.gdb", "NVM2024Final_IEM5_12_07012025")  
-# Clean up non veg names 
-veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE)   
-# rasterise the veg vector 
-veg_r <- rasterize(veg, nlc, "T_MAPCODE")  
+mp <- terra::rast(mp_path)
+mp <- resample(mp, lc2022, method = "near") #  match extent
 ```
 
 ## Analysis
@@ -74,8 +90,8 @@ Step 2. Cross-tabulate raster stack and add a column region to the output table 
 
 ```{r}
 # Analysis #Step 1-2.   # get LC  at 1990 time period 
-#alt_rall  <- as_tibble(crosstab(c(nlc, veg_r, wc, mpl, kzn)))   
-#write.csv(alt_rall, file = "outputs/alt_rall.csv")
+alt_rall  <- as_tibble(crosstab(c(lc2022, vegrast, wc, mp, kzn)))   
+write.csv(alt_rall, file = "outputs/alt_rall.csv")
 
 # Import cross tab output to avoid running spatial analysis 
 alt_rall <- read.csv("C:/Rdata/LCC_terr/outputs/alt_rall.csv")

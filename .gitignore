@@ -4,6 +4,7 @@
 *.Rhistory
 *.RData
 *.Ruserdata
+.Renviron
 
 # Temporary files
 *.log

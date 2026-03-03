@@ -1,8 +1,4 @@
 ---
-bibliography: references.bib
----
-
----
 title: "Nelson Mandela Bay Condition (2015)"
 format: html
 execute:
@@ -38,20 +34,20 @@ library(PROJ)
     ```
 
 ```{r}
+# Run LCchange_7class_veg24.qmd data loading steps prior to running this code
+
 # Add NMB Data (prepared in ARCGIS PRO), where 0 = inside AOI but no value assigned, 8 = severely degraded 80%) (ignore value 4 as this is built up areas and national land cover is judged to be a better source of extent data). 
- 
-nmb <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Alternative_LC_DEG/nmb_lcdeg2.tif")
 
-# Add national LC, resample to match 20m AEA grid used for supplementary analysis
-nlc <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif" )
-nlc <- resample(nlc, nmb, method = "near") # match extent 
+nmb_path <- list.files(
+  path = data_path,
+  pattern = "^nmb_lcdeg2\\.tif$",
+  recursive = TRUE,
+  full.names = TRUE,
+  ignore.case = TRUE
+)
 
-# Add vegetation data  
-veg <- vect("C:/GIS/NBA/VegMap/VEGMAP2024/NVM2024final/NVM2024final.gdb", "NVM2024Final_IEM5_12_07012025")  
-# Clean up non veg names 
-veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE)   
-# rasterise the veg vector 
-veg_r <- rasterize(veg, nlc, "T_MAPCODE")  
+nmb <- terra::rast(nmb_path)
+nmb <- resample(nmb, lc2022, method = "near") #  match extent
 ```
 
 ## Analysis
@@ -64,11 +60,11 @@ Step 2. Cross-tabulate each raster stack and add a column denoting the YEAR (fro
 
 ```{r}
 # Analysis #Step 1-2.   # get LC  at 1990 time period 
-#nmb_rall  <- as_tibble(crosstab(c(nlc, veg_r, nmb)))   
-#write.csv(nmb_rall, file = "outputs/nmb_rall.csv")
-# Read in data to avoid spatial steps
-nmb_rall <- read.csv("C:/Rdata/LCC_terr/outputs/nmb_rall.csv")
+nmb_rall  <- as_tibble(crosstab(c(lc2022, vegrast, nmb)))   
+write.csv(nmb_rall, file = "outputs/nmb_rall.csv")
 
+# Read in data to avoid spatial steps
+#nmb_rall <- read.csv("outputs/nmb_rall.csv")
 
 # Calculate extent of each vegtype within the specific AOI 
 nmb_list <- nmb_rall %>%

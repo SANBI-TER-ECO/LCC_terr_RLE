@@ -9,22 +9,10 @@ library(tidyverse)
 ```
 
 ```{r}
-# load data and prep - ensure  proj =  wgs84 aea cm 25 -24 -33
-
-lc1990 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc1990_7class.tif") 
-lc2018 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2018_7class.tif")
-lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
-veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  
-
-# Mask out Lesotho and Eswatini to ensure SA statistics
-bound <- vect("C:/Users/skownoa/Dropbox/NBAwork/SA_Boundaries/SA_Boundaries_v12.shp") #ensure it uses proj =  wgs84 aea cm 25 -24 -33
-
-mask <- bound[bound$PROVINCE %in% c("Lesotho", "Eswatini"), ]
-
-vegmasked <- erase(veg, mask)
+# Run LCchange_7class_veg24_SAonly.qmd data loading steps prior to running this code
 
 # make biome raster
-biome <- rasterize(vegmasked,lc1990,"T_BIOME")
+biome <- rasterize(vegrast_masked,lc2022,"T_BIOME")
 
 ```
 

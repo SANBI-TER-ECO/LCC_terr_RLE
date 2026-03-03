@@ -35,17 +35,52 @@ library(PROJ) # seems to be required due to a conflict with postgres on some mac
 2\. National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI [@rutherford2006; @Dayaram2019].
 
 ```{r}
-#Add data (note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra. 
+# Add data 
+# Base data path from .Renviron
+data_path <- Sys.getenv("DATA")
 
-# the data are available at this link https://www.dropbox.com/scl/fo/tcmdhlggiaq3d2brvize7/AHvcF04czyJvGnyZSwqfK5w?rlkey=ua3ollzupol34ditiqqvsdcw0&dl=0 download them to a location on the local machine then adjust the file paths as required  
+# Function to find and read each nlc raster
+read_all_lc <- function() {
+  fp <- list.files(
+    path = data_path,
+    pattern = "^nlc(\\d{4})_7class\\.tif$",
+    recursive = TRUE,
+    full.names = TRUE
+  )
+  
+  if (length(fp) == 0) {
+    stop("No NLC rasters found.")
+  }
+  
+  fp <- sort(fp)
+  r <- terra::rast(fp)
+  
+  years <- sub(".*nlc(\\d{4})_7class\\.tif$", "\\1", basename(fp))
+  names(r) <- paste0("nlc", years)
+  
+  r
+}
 
-lc1990 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc1990_7class.tif") 
-lc2014 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2014_7class.tif")
-lc2018 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2018_7class.tif")
-lc2020 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2020_7class.tif")
-lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
+#read a raster stack with each nlc as a "name"
+lc <- read_all_lc()
 
-veg <- vect("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/NLC_Change.gdb", "NVM2024Final_IEM5_12_07012025")  #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+# make separate files for each nlc
+lc1990 <- lc[["nlc1990"]]
+lc2014 <- lc[["nlc2014"]] 
+lc2018 <- lc[["nlc2018"]]
+lc2020 <- lc[["nlc2020"]]
+lc2022 <- lc[["nlc2022"]]
+
+#(note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra. 
+
+# load veg data from esri gdb (note this is a folder not a file access route)
+gdb_path <- file.path(data_path, "NLC_change", "NLC_Change.gdb")
+
+veg <- vect(
+  gdb_path,
+  layer = "NVM2024Final_IEM5_12_07012025"
+)
+
 
 # to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
 veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
@@ -61,7 +96,10 @@ To ensure the statistics on land cover change are applicable to South Africa the
 # import a polygon  of  SA Boundaries then make a  mask  and apply to vegmap so the stats generated are National Statistics
 
 # Mask out Lesotho and Eswatini to ensure SA statistics
-bound <- vect("C:/Users/skownoa/Dropbox/NBAwork/SA_Boundaries/SA_Boundaries_v12.shp") #ensure it uses proj =  wgs84 aea cm 25 -24 -33
+shp_path <- file.path(data_path, "SA_Boundaries", "SA_Boundaries_v12.shp")
+
+bound <- vect(shp_path)
+
 # make a mask
 mask <- bound[bound$PROVINCE %in% c("Lesotho", "Eswatini"), ]
 # erase Les  and Esw
@@ -167,11 +205,11 @@ write.csv(sa_lc7_rall, file = "outputs/sa_lc7_rall.csv")
 
 ## Summary metrics
 
-Summarise LC7 for each BIOME, LC class etc. By importing sa_lc7_rall.csv to excel all these summary metrics can be calculated, below are some R functions to summarise and plot the LC data -
+Summarise LC7 for each BIOME, LC class etc. By importing sa_lc7_rall.csv to excel all these summary metrics can be calculated, below are some R functions to summarise LC data -
 
 ```{r}
 # if required import data from spatial analysis above
- sa_lc7_rall <- read_csv("outputs/sa_lc7_rall.csv", show_col_types = FALSE)
+# sa_lc7_rall <- read_csv("outputs/sa_lc7_rall.csv", show_col_types = FALSE)
 
 # summarise per Veg Type
 options(scipen = 999)
@@ -226,114 +264,5 @@ lc7_year_prop <- sa_lc7_rall %>%
   pivot_wider(names_from = YEAR, values_from = proportion) 
 
 write.csv(lc7_year_prop, file = "outputs/results_df_lc7_prop_year_sa_only.csv")
-
-test <- sa_lc7_rall %>%   
-  filter(YEAR != 1750) %>%
-  group_by(YEAR) %>%
-  summarise(total_km2 = sum(km2),.groups = 'drop') 
   
-```
-
-```{r}
-## plot the LC by BIOME over time  
-# make data proportional
-options(scipen = 999)
-plot_data <- sa_lc7_rall %>%
-  filter(YEAR != 1750, BIOME != "NOTVEG") %>%
-  group_by(BIOME, YEAR, LC7_text) %>%
-  summarise(total_km2 = sum(km2),.groups = 'drop') %>%
-    group_by(YEAR,BIOME) %>%
-  mutate(proportion = total_km2 / sum(total_km2)) 
-
-# set colours for each LC class in the plot
-lc_colors <- c(
-  "Artificial-waterbody" = "blue",
-  "Natural" = "darkgreen",
-  "Built-up" = "black",
-  "Cropland" = "brown",
-  "Mine" = "red",
-  "Plantation" = "purple",
-  "Secondary-natural" = "orange"
-)
- 
-# set the order for the legend
-lc_order <- c("Mine", "Built-up", "Artificial-waterbody", "Cropland", "Plantation","Secondary-natural","Natural")                
-plot_data$LC7_text <- factor(plot_data$LC7_text, levels = lc_order) # this helps set the order
-
-plot <- ggplot(plot_data, aes(x = as.factor(YEAR), y = proportion, fill = (LC7_text))) +
-  geom_bar(stat = "identity", position = "stack") +  # Stacked bar chart
-  scale_fill_manual(values = lc_colors) + 
-  facet_wrap(~ BIOME, ncol = 5) +
-  theme_minimal() +
-  labs(
-    title = "Proportional Extent of Land Cover Classes by Biome and Year",
-    x = "Year",
-    y = "Proportional Extent",
-    fill = "Land Cover Class"
-  ) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        strip.text = element_text(size = 10),
-        legend.position = "bottom",
-        legend.text = element_text(size=7)) 
-
-#export the graph
-ggsave(
-  filename = "outputs/land_cover_biome_year_plot_sa_only.jpeg", # File name
-  plot = plot,                            # Plot object
-  device = "jpeg",                        # File format
-  width = 16, height = 12, units = "cm",   # Dimensions
-  dpi = 300                               # Resolution
-)
-
-
-```
-
-```{r}
-
-## plot the LC by YEAR   
-
-options(scipen = 999)
-plot_data2 <- sa_lc7_rall %>%
-  group_by(YEAR, LC7_text) %>%
-  summarise(total_km2 = sum(km2),.groups = 'drop') %>%
-  filter(YEAR != 1750) 
-   
-
-# set colours for each LC class in the plot
-lc_colors <- c(
-  "Artificial-waterbody" = "blue",
-  "Natural" = "darkgreen",
-  "Built-up" = "black",
-  "Cropland" = "brown",
-  "Mine" = "red",
-  "Plantation" = "purple",
-  "Secondary-natural" = "orange"
-)
- 
-# set the order for the legend
-lc_order <- c("Mine", "Built-up", "Artificial-waterbody", "Cropland", "Plantation","Secondary-natural","Natural")                
-plot_data2$LC7_text <- factor(plot_data2$LC7_text, levels = lc_order) # this helps set the order
-
-plot2 <- ggplot(plot_data2, aes(x = as.factor(YEAR), y = total_km2, fill = (LC7_text))) +
-  geom_bar(stat = "identity", position = "stack") +  # Stacked bar chart
-  scale_fill_manual(values = lc_colors) + 
-  theme_minimal() +
-  labs(
-    x = "Year",
-    y = "Extent Km2",
-    fill = "Land Cover Class"
-  ) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        strip.text = element_text(size = 8),
-        legend.position = "right",
-        legend.text = element_text(size=8)) 
-
-#export the graph
-ggsave(
-  filename = "outputs/land_cover_year_plot_sa_only.jpeg", # File name
-  plot = plot2,                            # Plot object
-  device = "jpeg",                        # File format
-  width = 12, height = 8, units = "cm",   # Dimensions
-  dpi = 300                               # Resolution
-)
 ```

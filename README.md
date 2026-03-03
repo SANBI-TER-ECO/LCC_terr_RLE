@@ -112,7 +112,7 @@ Little Karoo degradation map developed in 2009 ([Thompson et al., 2009](https://
 
 [Hardeveld_Condition.qmd](Hardeveld_Condition.qmd)
 
-The Hardeveld Bioregion degradation map developed in 2021 ([Bell, et al. 2021](https://doi.org/10.1002/ldr.3900)). The severely degraded class (degradation archetype = Well Below Average) was estimated to be equivalent to 80% severity on RLE Criterion D - factors include overgrazing / browsing resulting in severe reduction in shrub canopy cover, changes in species composition (loss of palatable species usually dominant), increase in bare ground fraction (with soil loss). Most impacts occurred more than 50 years ago, and in this arid region the perrenial shrub cover recover readily, rather it enters an alternative stable state - bare ground with annual grass and herbs following rainfall events).
+The Hardeveld Bioregion degradation map developed in 2021 ([Bell, et al. 2021](https://doi.org/10.1002/ldr.3900)). The severely degraded class (degradation archetype = Well Below Average) was estimated to be equivalent to 80% severity on RLE Criterion D - factors include overgrazing / browsing resulting in severe reduction in shrub canopy cover, changes in species composition (loss of palatable species usually dominant), increase in bare ground fraction (with soil loss). Most impacts occurred more than 50 years ago, and in this arid region the perennial shrub cover recover readily, rather it enters an alternative stable state - bare ground with annual grass and herbs following rainfall events).
 
 *The ecosystem data (vegetation types), and NLC and Hardeveld data were cross tabulated and then summarised to assess Criterion D3 of the IUCN RLE.* Results for Hardeveld [outputs/hv_sum.csv](outputs/hv_sum.csv).
 
@@ -124,8 +124,8 @@ The Little kroo degradation map developed in 2023 ([Kirsten, et al. 2023](https:
 
 *The ecosystem data (vegetation types), and NLC and Little Karoo (Kirsten) data were cross tabulated and then summarised to assess Criterion D3 of the IUCN RLE.* Results for Little Karoo (Kirsten data) [outputs/lkk_sum.csv](outputs/lkk_sum.csv).
 
-#### viii) Miscelaneous expert inputs on ecosystem condition for specific vegetation units
+#### viii) Miscellaneous expert inputs on ecosystem condition for specific vegetation units
 
-1.  Supplementary assessment testimony from Cape Nature (Annalize Schutte Vlok) and independant botanist Jan Vlok for the vegetation unit (SKv11) Eastern Little Karoo. The assessment was based on extensive field surveys and historical aerial photographs. Severely overgrazed / browsed / trampled areas (severity of \> 80%), with evidence that the degradation occurred in the last 50 years (Criterion D1). The supplementary data and information demonstrates that the degree of biotic disruption and loss of cover severely impairs the ability of he ELK vegetation to naturally regenerate. **The supplementary assessment (2020) resulted in an RLE status of Endangered (D1) for ELK.** Further data available from SANBI.
+1.  Supplementary assessment testimony from Cape Nature (Annalize Schutte Vlok) and independent botanist Jan Vlok for the vegetation unit (SKv11) Eastern Little Karoo. The assessment was based on extensive field surveys and historical aerial photographs. Severely overgrazed / browsed / trampled areas (severity of \> 80%), with evidence that the degradation occurred in the last 50 years (Criterion D1). The supplementary data and information demonstrates that the degree of biotic disruption and loss of cover severely impairs the ability of he ELK vegetation to naturally regenerate. **The supplementary assessment (2020) resulted in an RLE status of Endangered (D1) for ELK.** Further data available from SANBI.
 
-2.  Supplementary longterm field data and testimony from Jurgens and XXX on Richterveld vegetation units (REF), provided the basis for assessments of X Y Z
+2.  Supplementary long term field data ([Jurgens et al. 2025](https://doi.org/10.1016/j.jaridenv.2025.105459)) from Richtersveld vegetation units, provided the basis for assessments of selected units.

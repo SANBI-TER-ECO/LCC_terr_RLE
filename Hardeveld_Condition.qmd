@@ -21,20 +21,20 @@ library(PROJ)
 3.  National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI [@rutherford2006; @Dayaram2019].
 
 ```{r}
+# Run LCchange_7class_veg24.qmd data loading steps prior to running this code
+
 # Add Hardeveld degradation data (prepared in ARCGIS PRO), where 0 = inside AOI but level of degradation < that 80%; where 8 = severely degraded >= 80%). 
-HV <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Alternative_LC_DEG/hv_bell.tif")
+hv_path <- list.files(
+  path = data_path,
+  pattern = "^hv_bell\\.tif$",
+  recursive = TRUE,
+  full.names = TRUE,
+  ignore.case = TRUE
+)
 
-# Add national LC, resample to match 20m AEA grid used for supplementary analysis
-nlc <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif" )
-nlc <- resample(nlc, HV, method = "near") #  match extent 
+hv <- terra::rast(hv_path)
+hv <- resample(hv, lc2022, method = "near") #  match extent
 
-# Add vegetation data  
-veg <- vect("C:/GIS/NBA/VegMap/VEGMAP2024/NVM2024final/NVM2024final.gdb", "NVM2024Final_IEM5_12_07012025")  
-
-# Clean up non veg names 
-veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE)   
-# rasterise the veg vector 
-veg_r <- rasterize(veg, nlc, "T_MAPCODE")  
 ```
 
 ## Analysis
@@ -46,12 +46,12 @@ Step 1. Stack the land cover for each time period with the vegetation data.
 Step 2. Cross-tabulate each raster stack and add a column denoting the YEAR (from Land Cover) to the output table (in tibble format). Rename each output column as "LC" to allow binding later.\
 
 ```{r}
-# Analysis #Step 1-2.   # get LC  at 1990 time period 
-#hv_rall  <- as_tibble(crosstab(c(nlc, veg_r, HV)))   
-#write.csv(hv_rall, file = "outputs/hv_rall.csv")
+# Cross Tabulate veg condition hardeveld and lc2022
+hv_rall  <- as_tibble(crosstab(c(lc2022, vegrast, hv)))   
+write.csv(hv_rall, file = "outputs/hv_rall.csv")
 
 # Import cross tab output to avoid running spatial analysis 
-hv_rall <- read.csv("C:/Rdata/LCC_terr/outputs/hv_rall.csv")
+#hv_rall <- read.csv("outputs/hv_rall.csv")
 
 # Calculate extent of each vegtype within the specific AOI 
 hv_list <- hv_rall %>%
@@ -83,6 +83,6 @@ hv_sum <- hv_rall %>%
     left_join(hv_list, by = "T_MAPCODE") %>%
    mutate(ext_hv = ext_hv/(nat + notnat + deg80))
 
-write.csv(lk_sum, file = "outputs/hv_sum.csv")
+write.csv(hv_sum, file = "outputs/hv_sum.csv")
   
 ```

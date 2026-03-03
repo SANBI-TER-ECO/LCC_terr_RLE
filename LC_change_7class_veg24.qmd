@@ -16,7 +16,7 @@ bibliography: references.bib
 
 ### Approach
 
-Cross tabulate terrestrial ecosystem type (vegetation) data with land cover data 1990-2022 for South Africa. Two versions of this analysis have been developed. This version is focused on producing metrics for the Red List of Ecosystems assessments, as such it contains ecosystem extent and land cover data for Eswatini and Lesotho. There is an alternative version for which these countries are masked out and national metrics for South Africa are computed (for EAI & LC change information). These data sets are aligned to same extent, resolution and projection. They include land cover for Eswatini and Lesotho based on ESA Africa 2016 landcover product (i.e., no true land ocover change data).
+Cross tabulate terrestrial ecosystem type (vegetation) data with land cover data 1990-2022 for South Africa. Two versions of this analysis have been developed. This version is focused on producing metrics for the Red List of Ecosystems assessments, as such it contains ecosystem extent and land cover data for Eswatini and Lesotho. There is an alternative version for which these countries are masked out and national metrics for South Africa are computed (for EAI & LC change information). These data sets are aligned to same extent, resolution and projection. They include land cover for Eswatini and Lesotho based on ESA Africa 2016 land cover product (i.e., not true land cover change data).
 
 ### Load required packages
 
@@ -36,47 +36,58 @@ library(PROJ)
 2\. National Vegetation Map 2024 version, vector data (ESRI file geodatabase) January 2025 curated by SANBI [@rutherford2006; @Dayaram2019].
 
 ```{r}
+# Add data 
+# Base data path from .Renviron
+data_path <- Sys.getenv("DATA")
 
-#Add data 
+# Function to find and read each land cover  raster
+read_all_lc <- function() {
+  fp <- list.files(
+    path = data_path,
+    pattern = "^nlc(\\d{4})_7class\\.tif$",
+    recursive = TRUE,
+    full.names = TRUE
+  )
+  
+  if (length(fp) == 0) {
+    stop("No NLC rasters found.")
+  }
+  
+  fp <- sort(fp)
+  r <- terra::rast(fp)
+  
+  years <- sub(".*nlc(\\d{4})_7class\\.tif$", "\\1", basename(fp))
+  names(r) <- paste0("nlc", years)
+  
+  r
+}
 
-# the data are available at this link 
-# https://www.dropbox.com/scl/fo/tcmdhlggiaq3d2brvize7/AHvcF04czyJvGnyZSwqfK5w?rlkey=ua3ollzupol34ditiqqvsdcw0&dl=0 
-#download them to a location on the local machine then adjust the file paths as required  
+#read a raster stack with each nlc as a "name"
+lc <- read_all_lc()
 
-lc1990 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc1990_7class.tif") 
-lc2014 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2014_7class.tif")
-lc2018 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2018_7class.tif")
-lc2020 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2020_7class.tif")
-lc2022 <- rast("C:/Users/skownoa/Dropbox/NBAwork/NLC_change/nlc2022_7class.tif")
+# make separate files for each nlc
+lc1990 <- lc[["nlc1990"]]
+lc2014 <- lc[["nlc2014"]] 
+lc2018 <- lc[["nlc2018"]]
+lc2020 <- lc[["nlc2020"]]
+lc2022 <- lc[["nlc2022"]]
 
-#simplify to test__________________________________________________________
+#(note all LC products use  WGS84 Albers Equal Area, central meridian = 25; std parallel1 = -24; std parallel2 = -33). Use Tif version as this is processed faster by R terra. 
 
-# agg_fact <- 10
-# mode_function <- function(x) {
-#     ux <- unique(x)
-#     ux[which.max(tabulate(match(x, ux)))]
-# }
-# 
-# lc2022 <- aggregate(lc2022, fact = agg_fact, fun = mode_function)
-# lc2020 <- aggregate(lc2020, fact = agg_fact, fun = mode_function)
-# lc2020 <- resample(lc2020, lc2022, method ="near")
-# lc2018 <- aggregate(lc2018, fact = agg_fact, fun = mode_function)
-# lc2018 <- resample(lc2018, lc2022, method ="near")
-# lc2014 <- aggregate(lc2014, fact = agg_fact, fun = mode_function)
-# lc2014 <- resample(lc2014, lc2022, method ="near")
-# lc1990 <- aggregate(lc1990, fact = agg_fact, fun = mode_function)
-# lc1990 <- resample(lc1990, lc2022, method ="near")
-#____________________________________________________________________________
+# Add vegetation data
+# load veg data from esri gdb (note this is a folder not a file access route)
+gdb_path <- file.path(data_path, "NLC_change", "NLC_Change.gdb")
 
-#load vegetation data 
-veg <- vect("C:/GIS/NBA/VegMap/VEGMAP2024/NVM2024final/NVM2024final.gdb", "NVM2024Final_IEM5_12_07012025")
+veg <- vect(
+  gdb_path,
+  layer = "NVM2024Final_IEM5_12_07012025"
+)
+
 
 # to help differentiate masked areas (LES and SWA) from NON TERRESTRIAL areas add "NOTVEG" to T_MAPCODE where T_NAME = "Non-Terrestrial*"
 veg$T_MAPCODE <- ifelse(veg$T_Name == "Non-terrestrial (estuarine habitat)" | veg$T_Name == "Non-terrestrial (Aquatic)", "NOTVEG", veg$T_MAPCODE) 
 
-# rasterise the veg vector
-vegrast <- rasterize(veg,lc2022,"T_MAPCODE") 
-
+vegrast <- rasterize(veg,lc1990,"T_MAPCODE")
 ```
 
 ## Analysis
@@ -178,6 +189,4 @@ lc7_biome <- lc7_rall %>%
   group_by(YEAR, LC7_text) %>%
   summarise(tot_km2 = sum(km2),.groups = 'drop') %>%
   pivot_wider(names_from = YEAR, values_from = tot_km2)
-
-
 ```
