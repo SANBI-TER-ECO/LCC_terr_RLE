@@ -1,4 +1,4 @@
-## Land cover change and ecosystem condition analyses for the Red List of (terrestrial) Ecosystems 
+## Land cover change and ecosystem condition analyses for the Red List of (terrestrial) Ecosystems
 
 ### National Biodiversity Assessment - South Africa
 
