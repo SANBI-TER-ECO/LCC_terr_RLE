@@ -27,7 +27,7 @@ library(PROJ)
 
 lk_path <- list.files(
   path = data_path,
-  pattern = "^little_karoo_deg4\\.tif$",
+  pattern = "^littlekaroo_deg4\\.tif$",
   recursive = TRUE,
   full.names = TRUE,
   ignore.case = TRUE

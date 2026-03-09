@@ -26,7 +26,7 @@ library(PROJ)
 # Add STEP Data (prepared in ARCGIS PRO), where 0 = inside AOI but no value assigned, 8 = severely degraded 80%). 
 step <- rast("C:/Users/skownoa/Dropbox/NBAwork/RLEworking/Alternative_LC_DEG/step_deg2.tif")
 
-nmb_path <- list.files(
+step_path <- list.files(
   path = data_path,
   pattern = "^step_deg2\\.tif$",
   recursive = TRUE,
